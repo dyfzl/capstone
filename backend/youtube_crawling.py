@@ -2,9 +2,11 @@ from googleapiclient.discovery import build
 import csv
 import os
 from googleapiclient.errors import HttpError
+from dotenv import load_dotenv
 
-# API 키 설정
-API_KEY = 'AIzaSyAPTAHUqK4qIYut2-4H_BrdYlcLrIQ0lhI'
+# .env 파일에서 API 키 읽기
+load_dotenv()
+API_KEY = os.getenv('YOUTUBE_API_KEY')
 
 # YouTube API 클라이언트 생성
 youtube = build('youtube', 'v3', developerKey=API_KEY)
@@ -41,7 +43,7 @@ def get_video_ids_and_titles(channel_id):
         for item in response['items']:
             video_id = item['id']['videoId']
             video_title = item['snippet']['title']
-            video_data.append((video_url, video_title))
+            video_data.append((video_id, video_title))
             if len(video_data) >= 50:
                 break
 
