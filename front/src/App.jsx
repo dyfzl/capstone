@@ -7,13 +7,23 @@ import WordCloud from "./components/WordCloud";
 import PieChart from "./components/PieChart";
 import LineGraph from "./components/LineGraph";
 import Comments from "./components/Comments";
+import Rank from "./components/Rank.jsx";
 import "./App.css";
 
 function App() {
-  const [filePaths, setFilePaths] = useState(null); // 파일 경로 상태 추가
+  const [filePaths, setFilePaths] = useState({
+    comments: "../data/comments.csv",
+    ratio: "../data/ratio.csv",
+    count: "../data/count.csv",
+  }); // 파일 경로 상태 추가
   const [selectedEmotion, setSelectedEmotion] = useState("긍정");
   const [activeButton, setActiveButton] = useState(0);
   const [hasData, setHasData] = useState(false); // `hasData` 상태 추가
+
+  // 참조 생성
+  const wordCloudRef = useRef(null);
+  const chartRef = useRef(null);
+  const commentsRef = useRef(null);
 
   const handleSearchComplete = (files) => {
     setFilePaths(files); // Header에서 파일 경로를 받아 저장
@@ -22,10 +32,10 @@ function App() {
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
-      const wordCloudPosition = wordCloudRef.current.offsetTop;
-      const chartPosition = chartRef.current.offsetTop;
-      const commentsPosition = commentsRef.current.offsetTop;
-      const chartHeight = chartRef.current.offsetHeight;
+      const wordCloudPosition = wordCloudRef.current?.offsetTop || 0;
+      const chartPosition = chartRef.current?.offsetTop || 0;
+      const commentsPosition = commentsRef.current?.offsetTop || 0;
+      const chartHeight = chartRef.current?.offsetHeight || 0;
 
       if (
         scrollPosition >= wordCloudPosition &&
@@ -51,12 +61,18 @@ function App() {
       <Header onSearchComplete={handleSearchComplete} />
       {filePaths && (
         <div>
-          <WordCloudRank dataPath={filePaths.comments} />
-          <WordCloud dataPath={filePaths.comments} />
-          <Rank dataPath={filePaths.comments} />
-          <Comments dataPath={filePaths.comments} />
-          <PieChart dataPath={filePaths.ratio} />
-          <LineGraph dataPath={filePaths.count} />
+          <div ref={wordCloudRef}>
+            <WordCloudRank dataPath={filePaths.comments} />
+            <WordCloud dataPath={filePaths.comments} />
+          </div>
+          <div ref={chartRef}>
+            <Rank dataPath={filePaths.comments} />
+            <PieChart dataPath={filePaths.ratio} />
+            <LineGraph dataPath={filePaths.count} />
+          </div>
+          <div ref={commentsRef}>
+            <Comments dataPath={filePaths.comments} />
+          </div>
         </div>
       )}
     </div>

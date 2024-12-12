@@ -354,19 +354,19 @@ def scrape_youtube_comments(account, start_date, end_date):
     return comments_data, elapsed_time
 
 # API 엔드포인트
-@router.post("/crawl")
-async def crawl(request: CrawlRequest):
-    if request.platform.lower() == "instagram":
-        comments, elapsed_time = scrape_instagram_comments(request.account, request.start_date, request.end_date)
-    elif request.platform.lower() == "youtube":
-        comments, elapsed_time = scrape_youtube_comments(request.account, request.start_date, request.end_date)
-    else:
-        raise HTTPException(status_code=400, detail="Invalid platform. Choose either 'instagram' or 'youtube'.")
-    return {
-        "message": f"Comments saved to CSV", 
-        "comments_count": len(comments),
-        "elapsed_time":f"{elapsed_time:.2f}seconds"
-        }
+# @router.post("/crawl")
+# async def crawl(request: CrawlRequest):
+#     if request.platform.lower() == "instagram":
+#         comments, elapsed_time = scrape_instagram_comments(request.account, request.start_date, request.end_date)
+#     elif request.platform.lower() == "youtube":
+#         comments, elapsed_time = scrape_youtube_comments(request.account, request.start_date, request.end_date)
+#     else:
+#         raise HTTPException(status_code=400, detail="Invalid platform. Choose either 'instagram' or 'youtube'.")
+#     return {
+#         "message": f"Comments saved to CSV",
+#         "comments_count": len(comments),
+#         "elapsed_time":f"{elapsed_time:.2f}seconds"
+#         }
 
 app.include_router(router)
 # 앱 실행 (개발 환경)

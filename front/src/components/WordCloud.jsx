@@ -11,7 +11,7 @@ const WordCloud = ({ dataPath, hasData, size }) => {
     const fetchData = async () => {
       setIsLoading(true); // 로딩 시작
       try {
-        const response = await fetch(`http://127.0.0.1:8000/data/${dataPath}`);
+        const response = await fetch({dataPath});
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

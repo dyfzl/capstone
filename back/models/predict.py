@@ -83,24 +83,25 @@ def analyze_comments(input_path: str, batch_size: int = 64, max_len: int = 128):
             escapechar="\\",
             encoding="utf-8"
         )
+        logger.info(f"Original DataFrame loaded with {len(original_df)} rows.")
 
         # 2. 댓글 전처리
         processed_df = preprocess_dataframe(original_df.copy(), text_column='comment')
 
         if processed_df.empty:
-          raise ValueError("Processed DataFrame is empty after preprocessing.")
-        
+            raise ValueError("Processed DataFrame is empty after preprocessing.")
 
         # 3. NaN 값 제거 (전처리 단계에서 모든 NaN 삭제)
         processed_df.dropna(inplace=True)
+        logger.info(f"DataFrame after NaN removal: {len(processed_df)} rows remaining.")
 
         if processed_df.empty:
             raise ValueError("Processed DataFrame is empty after removing NaN values.")
 
-
         # 3. 날짜 변환 및 비정상 값 제거
         processed_df['Date'] = pd.to_datetime(processed_df['date'], errors='coerce')
         processed_df = processed_df.dropna(subset=['Date'])
+        logger.info(f"DataFrame after date processing: {len(processed_df)} rows remaining.")
 
         # 4. BERT 데이터셋 생성 및 감정 분석
         dataset = BERTDataset(processed_df, tokenizer, max_len)
@@ -118,8 +119,16 @@ def analyze_comments(input_path: str, batch_size: int = 64, max_len: int = 128):
                 predictions.extend([int(pred) for pred in batch_predictions])
 
         # 5. 감정 결과 통합
+        if len(predictions) != len(processed_df):
+            logger.error("Mismatch between predictions and DataFrame rows.")
+            raise ValueError("Predictions size does not match the DataFrame size.")
+
         processed_df['Feelings'] = predictions
-        original_df['Feelings'] = processed_df['Feelings'].astype(int)  # 하드코딩으로 명시적 정수 변환
+        processed_df['Feelings'].fillna(0, inplace=True)  # NaN 값 처리 (기본값 -1)
+        processed_df['Feelings'] = processed_df['Feelings'].astype(int)
+
+        original_df['Feelings'] = processed_df['Feelings']
+        logger.info(f"Feelings column added to original DataFrame.")
 
         # 6. 데이터 저장 경로 설정
         save_dir = os.path.abspath("../front/public/data")
@@ -127,8 +136,8 @@ def analyze_comments(input_path: str, batch_size: int = 64, max_len: int = 128):
 
         # 7. 댓글 데이터 저장 (원본 데이터에 감정 추가)
         comments_file = os.path.join(save_dir, "comments.csv")
-        original_df['Feelings'] = original_df['Feelings'].apply(int)
         original_df.to_csv(comments_file, index=False, encoding='utf-8-sig', float_format='%.0f')
+        logger.info(f"Comments saved to {comments_file}.")
 
         # 8. 감정 비율 계산 및 저장
         ratio_file = os.path.join(save_dir, "ratio.csv")
@@ -142,20 +151,21 @@ def analyze_comments(input_path: str, batch_size: int = 64, max_len: int = 128):
         pd.DataFrame({
             "Ratio": [emotion_ratios[0], emotion_ratios[1], emotion_ratios[2]],
         }, index=["Positive", "Neutral", "Negative"]).to_csv(ratio_file, index=False, encoding='utf-8-sig')
+        logger.info(f"Ratios saved to {ratio_file}.")
 
         # 9. 연도-분기별 감정 데이터 집계
         min_date, max_date = processed_df['Date'].min(), processed_df['Date'].max()
         if pd.isna(min_date) or pd.isna(max_date):
             raise ValueError("Date range is invalid. Ensure the 'Date' column has valid entries.")
-        
+
         date_ranges = pd.date_range(start=min_date, end=max_date, periods=5)
         labels = [date_ranges[i].strftime('%Y-%m-%d') for i in range(len(date_ranges) - 1)]
 
         processed_df['Period'] = pd.cut(
-            processed_df['Date'], 
-            bins=date_ranges, 
-            labels=labels, 
-            right=False 
+            processed_df['Date'],
+            bins=date_ranges,
+            labels=labels,
+            right=False
         )
 
         period_counts = (
@@ -170,13 +180,14 @@ def analyze_comments(input_path: str, batch_size: int = 64, max_len: int = 128):
 
         count_file = os.path.join(save_dir, "count.csv")
         period_counts.to_csv(count_file, index=False, encoding='utf-8-sig')
+        logger.info(f"Counts saved to {count_file}.")
 
         # 10. 감정 결과 통합
         null_count = original_df['Feelings'].isnull().sum()  # Null 값 계산
         logger.info(f"Null values in Feelings column: {null_count}")
 
         # Null 값 삭제
-        original_df = original_df.dropna(subset=['Feelings'])
+        original_df.dropna(subset=['Feelings'], inplace=True)
         logger.info("Null values removed from Feelings column.")
 
         # 11. 결과 반환
@@ -190,6 +201,7 @@ def analyze_comments(input_path: str, batch_size: int = 64, max_len: int = 128):
         }
 
     except Exception as e:
+        logger.exception("Error during analysis.")
         return {
             "error": str(e),
             "comments_file": None,
