@@ -8,9 +8,7 @@ const PieChart = ({ hasData }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(
-          `${import.meta.env.BASE_URL}data/ratio.csv`
-        );
+        const response = await fetch(`http://127.0.0.1:5173${dataPath}`);
         const text = await response.text();
         const rows = text.split("\n").map((row) => row.split(","));
 

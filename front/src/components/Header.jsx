@@ -11,6 +11,7 @@ const Header = ({ onSearchComplete }) => {
   const [keyword, setKeyword] = useState("");
   const [platform, setPlatform] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isReadyToFetch, setIsReadyToFetch] = useState(false); // 데이터 준비 상태
 
   const handleSearch = async () => {
     if (!startDate || !endDate) {
@@ -27,6 +28,7 @@ const Header = ({ onSearchComplete }) => {
     }
 
     setLoading(true);
+    setIsReadyToFetch(false); // 새로운 요청 시 상태 초기화
 
     try {
       const response = await fetch("http://127.0.0.1:8000/crawl-and-analyze", {
@@ -60,6 +62,8 @@ const Header = ({ onSearchComplete }) => {
         console.log("Comments File:", comments);
         console.log("Ratio File:", ratio);
         console.log("Count File:", count);
+
+        setIsReadyToFetch(true); // 데이터 준비 상태 활성화
       }
     } catch (error) {
       console.error("Failed to fetch data:", error);

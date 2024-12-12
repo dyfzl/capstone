@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./Comments.css";
 
-const Comments = () => {
+const Comments = ({ dataPath }) => {
   const [comments, setComments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedSentiments, setSelectedSentiments] = useState({
@@ -16,9 +16,7 @@ const Comments = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(
-          `${import.meta.env.BASE_URL}data/comments.csv`
-        );
+        const response = await fetch(dataPath);
         const text = await response.text();
         const rows = text.split("\n").map((row) => row.split(","));
         const parsedComments = rows.slice(1).map((row) => ({
@@ -39,7 +37,7 @@ const Comments = () => {
     };
 
     fetchData();
-  }, []);
+  }, [dataPath]); // 의존성 배열에 dataPath 추가
 
   // 선택된 감정에 따른 댓글 필터링
   const filteredComments = comments.filter(

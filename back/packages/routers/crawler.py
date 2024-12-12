@@ -41,7 +41,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-router = APIRouter(prefix="/api")
+router = APIRouter()
 
 # 공통 데이터 모델 정의
 class CrawlRequest(BaseModel):

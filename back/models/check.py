@@ -1,6 +1,9 @@
 import pandas as pd
 import re
 import unicodedata
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 def merge_feedback_with_train_data(train_data_path, feedback_data_path):
     train_data = pd.read_csv(train_data_path)
@@ -30,16 +33,19 @@ def replace_emoticons(text):
     """
     if not isinstance(text, str):  # 문자열이 아닌 경우 처리
         return str(text)  # 문자열로 변환
-    for emoticon, replacement in EMOTICON_MAP.items():
-        text = text.replace(emoticon, replacement)
-    return text
+    
+    # 정규식 패턴 생성
+    pattern = re.compile("|".join(re.escape(k) for k in EMOTICON_MAP.keys()))
+    return pattern.sub(lambda m: EMOTICON_MAP[m.group(0)], text)
 
-# 특수문자 제거 함수
 def remove_special_characters(text):
     """
-    Remove special characters except ^^, !, ?, ., ,.
+    Remove special characters except !, ?, ., ,. Also removes newlines (\n).
     """
-    return re.sub(r'(?!\^\^)[^\w\s!?.,]', '', text)
+    # \n 포함하여 제거
+    return re.sub(r'[^!?.,\w\s]', '', text).replace('\n', '')
+
+
 
 # 자모 분리 해결 및 중복 문자 정리 함수
 def preprocess_text(text):
@@ -59,9 +65,11 @@ def preprocess_dataframe(df, text_column='comment'):
     removing special characters, and normalizing text.
     Filters rows based on text length (5 to 300 characters).
     """
+    if text_column not in df.columns:
+        raise ValueError(f"Column '{text_column}' not found in DataFrame.")
+
     # 1. 공백 및 NaN 값 처리
-    df[text_column] = df[text_column].fillna('')  # NaN 값은 빈 문자열로 대체
-    df[text_column] = df[text_column].str.strip()  # 문자열 양끝 공백 제거
+    df[text_column] = df[text_column].fillna('').str.strip()
 
     # 2. 이모티콘 처리
     df[text_column] = df[text_column].apply(replace_emoticons)
@@ -73,6 +81,28 @@ def preprocess_dataframe(df, text_column='comment'):
     df[text_column] = df[text_column].apply(preprocess_text)
 
     # 5. 텍스트 길이에 따라 필터링 (5 ~ 300자 사이)
-    df = df[df[text_column].apply(len).between(5, 300)]
+    return df[df[text_column].apply(len).between(5, 300)]
+
+# CSV 파일에서 줄바꿈이 포함된 댓글 처리
+def preprocess_multiline_csv(file_path, output_path=None):
+    """
+    Preprocess a multiline CSV file where comments span multiple lines.
+    Correctly handles comments enclosed in quotes.
+    """
+    logging.info("Loading CSV file: %s", file_path)
+    df = pd.read_csv(
+        file_path,
+        quotechar='"',
+        escapechar="\\",
+        encoding="utf-8"
+    )
+    logging.info("Loaded %d rows from CSV.", len(df))
+
+    df = preprocess_dataframe(df, text_column='comment')
+    logging.info("Preprocessed data: %d rows after filtering.", len(df))
+
+    if output_path:
+        df.to_csv(output_path, index=False, encoding='utf-8-sig')
+        logging.info("Saved processed data to: %s", output_path)
 
     return df

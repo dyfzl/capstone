@@ -2,15 +2,13 @@ import React, { useState, useEffect } from "react";
 import "./LineGraph.css";
 import { ResponsiveLine } from "@nivo/line";
 
-const LineGraph = () => {
+const LineGraph = ({ dataPath }) => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(
-          `${import.meta.env.BASE_URL}data/count.csv`
-        );
+        const response = await fetch(`http://localhost:5173${filePath}`);
         const text = await response.text();
         const rows = text.split("\n").map((row) => row.split(","));
 
@@ -57,7 +55,7 @@ const LineGraph = () => {
     };
 
     fetchData();
-  }, []);
+  }, [filePath]); // 의존성 배열에 dataPath 추가
 
   if (!data || data.length === 0) {
     return (

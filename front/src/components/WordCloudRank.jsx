@@ -11,24 +11,35 @@ const WordCloudRank = ({ hasData }) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await generateWordCloudData();
-      if (data && selectedSentiment) {
-        const sentimentText = data[selectedSentiment] || "";
-        setWordCloudData(sentimentText);
+      try {
+        const data = await await fetch(
+          `http://127.0.0.1:8000/data/${dataPath}`
+        );
+        if (data && selectedSentiment) {
+          const sentimentText = data[selectedSentiment] || "";
+          setWordCloudData(sentimentText);
 
-        // 키워드와 빈도 계산
-        const wordCounts = sentimentText.split(/\s+/).reduce((acc, word) => {
-          acc[word] = (acc[word] || 0) + 1;
-          return acc;
-        }, {});
+          // 키워드와 빈도 계산
+          const wordCounts = sentimentText.split(/\s+/).reduce((acc, word) => {
+            acc[word] = (acc[word] || 0) + 1;
+            return acc;
+          }, {});
 
-        // 상위 5개 키워드 추출
-        const sortedKeywords = Object.entries(wordCounts)
-          .sort(([, a], [, b]) => b - a)
-          .slice(0, 5)
-          .map(([word, count]) => ({ word, count }));
+          // 상위 5개 키워드 추출
+          const sortedKeywords = Object.entries(wordCounts)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 5)
+            .map(([word, count]) => ({ word, count }));
 
-        setKeywords(sortedKeywords);
+          setKeywords(sortedKeywords);
+        } else {
+          throw new Error("Sentiment data is unavailable or invalid.");
+        }
+      } catch (err) {
+        console.error("Error fetching word cloud data:", err);
+        setError("데이터를 가져오는 중 오류가 발생했습니다.");
+        setWordCloudData("");
+        setKeywords([]);
       }
     };
 
