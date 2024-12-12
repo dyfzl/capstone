@@ -19,7 +19,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+app.include_router(crawler.router)
 @app.get("/download-csv")
 def download_csv():
     # CSV 파일 경로 설정
