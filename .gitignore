@@ -200,4 +200,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-back/models/best_kobert_model.pt 
