@@ -8,10 +8,10 @@ from kobert_tokenizer import KoBERTTokenizer
 from transformers import BertModel
 from fastapi import FastAPI
 from .check import preprocess_dataframe, preprocess_multiline_csv
+from logging_config import setup_logger
 
 # 로그 설정
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger = setup_logger(__name__)
 
 # 핸들러와 포맷터 추가
 console_handler = logging.StreamHandler()
@@ -109,26 +109,42 @@ def analyze_comments(input_path: str, batch_size: int = 64, max_len: int = 128):
 
         predictions = []
         with torch.no_grad():
-            for batch in dataloader:
+            for batch_idx, batch in enumerate(dataloader):
                 input_ids = batch['input_ids'].to(device)
                 attention_mask = batch['attention_mask'].to(device)
-                outputs = model(input_ids=input_ids, attention_mask=attention_mask)
 
-                # 정수형 변환 및 추가
+                # 모델 출력
+                outputs = model(input_ids=input_ids, attention_mask=attention_mask)
                 batch_predictions = torch.argmax(outputs, dim=1).cpu().numpy()
+
                 predictions.extend([int(pred) for pred in batch_predictions])
 
         # 5. 감정 결과 통합
         if len(predictions) != len(processed_df):
-            logger.error("Mismatch between predictions and DataFrame rows.")
-            raise ValueError("Predictions size does not match the DataFrame size.")
+            mismatch_count = len(processed_df) - len(predictions)
+            logger.warning(f"Mismatch between predictions and DataFrame rows: {mismatch_count} rows removed.")
+            
+            # 누락된 데이터 삭제
+            processed_df = processed_df.iloc[:len(predictions)].reset_index(drop=True)
+            logger.info(f"Processed DataFrame resized to match predictions: {len(processed_df)} rows remaining.")
 
         processed_df['Feelings'] = predictions
-        processed_df['Feelings'].fillna(0, inplace=True)  # NaN 값 처리 (기본값 -1)
-        processed_df['Feelings'] = processed_df['Feelings'].astype(int)
 
+        original_df = original_df.reset_index(drop=True)
+        original_df = original_df.iloc[:len(processed_df)].reset_index(drop=True)
         original_df['Feelings'] = processed_df['Feelings']
         logger.info(f"Feelings column added to original DataFrame.")
+
+        # 6. NaN 값 확인 및 로그 출력
+        nan_count = original_df['Feelings'].isna().sum()
+        if nan_count > 0:
+            logger.warning(f"There are {nan_count} NaN values in the 'Feelings' column.")
+        else:
+            logger.info("No NaN values found in the 'Feelings' column.")
+        
+        # Null 값 삭제
+        original_df.dropna(subset=['Feelings'], inplace=True)
+        logger.info("Null values removed from Feelings column.")
 
         # 6. 데이터 저장 경로 설정
         save_dir = os.path.abspath("../front/public/data")

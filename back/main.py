@@ -8,12 +8,11 @@ from pydantic import BaseModel
 import asyncio
 import os
 import pandas as pd
-import logging
+from logging_config import setup_logger
 from threading import Lock
 
 # 로그 설정
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 app = FastAPI()
 
@@ -89,17 +88,11 @@ async def crawl_and_analyze(
         logger.info(f"Loading dataset from: {dataset_path}")
         comments = pd.read_csv(dataset_path, encoding='utf-8-sig')
 
-        # 데이터 확인
-        if comments.empty:
-            logger.error("Loaded dataset is empty.")
-            raise ValueError("Loaded dataset is empty.")
-        logger.info("Dataset successfully loaded.")
 
         # 모델 분석 수행 및 결과 저장
         logger.info("Starting analyze_comments function")
         try:
             analysis_result = analyze_comments(dataset_path)
-            logger.info(f"Analysis Result: {analysis_result}")
         except Exception as e:
             logger.error(f"Error in analyze_comments: {e}")
             raise
