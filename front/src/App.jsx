@@ -3,31 +3,18 @@ import Header from "./components/Header";
 import SideMenu from "./components/SideMenu";
 import DefaultImage from "./components/images/default-img.png";
 import WordCloudRank from "./components/WordCloudRank";
-import WordCloud from "./components/WordCloud";
 import PieChart from "./components/PieChart";
 import LineGraph from "./components/LineGraph";
 import Comments from "./components/Comments";
-import Rank from "./components/Rank.jsx";
 import "./App.css";
 
 function App() {
-  const [filePaths, setFilePaths] = useState({
-    comments: "../data/comments.csv",
-    ratio: "../data/ratio.csv",
-    count: "../data/count.csv",
-  }); // 파일 경로 상태 추가
-  const [selectedEmotion, setSelectedEmotion] = useState("긍정");
+  const [hasData, setHasData] = useState(false);
   const [activeButton, setActiveButton] = useState(0);
-  const [hasData, setHasData] = useState(false); // `hasData` 상태 추가
 
-  // 참조 생성
   const wordCloudRef = useRef(null);
   const chartRef = useRef(null);
   const commentsRef = useRef(null);
-
-  const handleSearchComplete = (files) => {
-    setFilePaths(files); // Header에서 파일 경로를 받아 저장
-  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,6 +22,7 @@ function App() {
       const wordCloudPosition = wordCloudRef.current?.offsetTop || 0;
       const chartPosition = chartRef.current?.offsetTop || 0;
       const commentsPosition = commentsRef.current?.offsetTop || 0;
+
       const chartHeight = chartRef.current?.offsetHeight || 0;
 
       if (
@@ -57,21 +45,33 @@ function App() {
   }, []);
 
   return (
-    <div>
-      <Header onSearchComplete={handleSearchComplete} />
-      {filePaths && (
-        <div>
-          <div ref={wordCloudRef}>
-            <WordCloudRank dataPath={filePaths.comments} />
-            <WordCloud dataPath={filePaths.comments} />
+    <div className="App">
+      <Header onSearchComplete={() => setHasData(true)} />
+      <SideMenu
+        activeButton={activeButton}
+        setActiveButton={setActiveButton}
+        refs={{ wordCloudRef, chartRef, commentsRef }}
+      />
+      {!hasData ? (
+        <div className="default-view">
+          <img src={DefaultImage} alt="Default" className="default-img" />
+          <p className="default-text">데이터가 없습니다.</p>
+        </div>
+      ) : (
+        <div className="grid-container">
+          <div className="wordcloud-rank" ref={wordCloudRef}>
+            <WordCloudRank />
           </div>
-          <div ref={chartRef}>
-            <Rank dataPath={filePaths.comments} />
-            <PieChart dataPath={filePaths.ratio} />
-            <LineGraph dataPath={filePaths.count} />
+          <div className="charts-container" ref={chartRef}>
+            <div className="pie-chart">
+              <PieChart />
+            </div>
+            <div className="line-graph">
+              <LineGraph />
+            </div>
           </div>
-          <div ref={commentsRef}>
-            <Comments dataPath={filePaths.comments} />
+          <div className="comments-section" ref={commentsRef}>
+            <Comments />
           </div>
         </div>
       )}

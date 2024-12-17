@@ -1,68 +1,65 @@
 import React, { useState, useEffect } from "react";
-import "./LineGraph.css";
 import { ResponsiveLine } from "@nivo/line";
+import "./LineGraph.css";
 
-const LineGraph = ({ dataPath }) => {
+const LineGraph = () => {
   const [data, setData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch({dataPath});
+        setIsLoading(true);
+
+        // count.csv 파일을 public/data 디렉토리에서 불러옵니다.
+        const response = await fetch(
+          `${import.meta.env.BASE_URL}data/count.csv`
+        );
+
+        if (!response.ok) throw new Error("Failed to fetch count.csv");
+
         const text = await response.text();
-        const rows = text.split("\n").map((row) => row.split(","));
 
-        // 데이터 파싱 (2번째 행부터 시작)
-        const parsedData = rows.slice(1).map((row) => ({
-          date: row[0],
-          positive: parseInt(row[1], 10),
-          neutral: parseInt(row[2], 10),
-          negative: parseInt(row[3], 10),
-        }));
+        // CSV 파일을 읽어서 파싱
+        const rows = text
+          .trim()
+          .split("\n")
+          .slice(1) // 헤더 제외
+          .map((row) => row.split(","));
 
-        // LineGraph에 필요한 형식으로 데이터 변환
+        // 데이터를 Nivo Line 차트 형식으로 변환
         const formattedData = [
           {
             id: "긍정",
             color: "#316dec",
-            data: parsedData.map((entry) => ({
-              x: entry.date,
-              y: entry.positive,
-            })),
+            data: rows.map((r) => ({ x: r[0], y: parseInt(r[1], 10) || 0 })),
           },
           {
             id: "중립",
             color: "#0f9b0f",
-            data: parsedData.map((entry) => ({
-              x: entry.date,
-              y: entry.neutral,
-            })),
+            data: rows.map((r) => ({ x: r[0], y: parseInt(r[2], 10) || 0 })),
           },
           {
             id: "부정",
             color: "#e93434",
-            data: parsedData.map((entry) => ({
-              x: entry.date,
-              y: entry.negative,
-            })),
+            data: rows.map((r) => ({ x: r[0], y: parseInt(r[3], 10) || 0 })),
           },
         ];
 
         setData(formattedData);
       } catch (error) {
-        console.error("Error loading CSV data:", error);
+        console.error("Error loading LineGraph data:", error);
+        setData([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchData();
-  }, [dataPath]); // 의존성 배열에 dataPath 추가
+    fetchData(); // 컴포넌트 마운트 시 데이터 로드
+  }, []);
 
-  if (!data || data.length === 0) {
-    return (
-      <div className="linegraph-container no-data">
-        <p className="no-data-text">Line Chart</p>
-      </div>
-    );
+  if (isLoading) {
+    return <p>데이터를 불러오는 중입니다...</p>;
   }
 
   return (

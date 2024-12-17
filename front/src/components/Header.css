@@ -69,7 +69,7 @@
 
 .dropdown-button.placeholder {
   font-size: 12px;
-  color: #535353; /* 기본 안내문구 색상을 회색으로 설정 */
+  color: #535353;
 }
 
 .dropdown-button img {
@@ -129,7 +129,7 @@
   border-radius: 25px;
   height: 25px;
   width: 115px;
-  font-size: 12px;
+  font-size: 13px;
   padding-right: 10px;
   border: 1.5px solid #c5c5c5;
 }
@@ -157,12 +157,25 @@
   border-radius: 15px;
   border: none;
   cursor: pointer;
+
+  display: flex; /* Flexbox 적용 */
+  justify-content: center; /* 가로 중앙 정렬 */
+  align-items: center; /* 세로 중앙 정렬 */
+  height: 28px; /* 부모 요소 높이 설정 (input란 높이와 동일) */
+}
+
+.analyze-comment {
+  margin: 0;
+  margin-top: 3px;
+  line-height: 1;
+  font-size: 0.7rem;
+  color: #333;
 }
 
 .search-icon {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   align-items: center;
-  margin-top: 5px;
+  margin-top: 6px;
   padding-right: 5px;
 }

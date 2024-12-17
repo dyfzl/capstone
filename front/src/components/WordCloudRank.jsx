@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import WordCloud from "./WordCloud";
 import Rank from "./Rank";
-import { generateWordCloudData } from "../utils/wordCloudGenerator";
 import "./WordCloudRank.css";
 
-const WordCloudRank = ({ hasData }) => {
+const WordCloudRank = () => {
   const [selectedSentiment, setSelectedSentiment] = useState("긍정");
   const [wordCloudData, setWordCloudData] = useState("");
   const [keywords, setKeywords] = useState([]);
@@ -12,32 +11,62 @@ const WordCloudRank = ({ hasData }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await await fetch(
-          `http://127.0.0.1:8000/data/${dataPath}`
+        // comments.csv 파일을 public/data 디렉토리에서 불러옵니다
+        const response = await fetch(
+          `${import.meta.env.BASE_URL}data/comments.csv`
         );
-        if (data && selectedSentiment) {
-          const sentimentText = data[selectedSentiment] || "";
-          setWordCloudData(sentimentText);
 
-          // 키워드와 빈도 계산
-          const wordCounts = sentimentText.split(/\s+/).reduce((acc, word) => {
-            acc[word] = (acc[word] || 0) + 1;
-            return acc;
-          }, {});
-
-          // 상위 5개 키워드 추출
-          const sortedKeywords = Object.entries(wordCounts)
-            .sort(([, a], [, b]) => b - a)
-            .slice(0, 5)
-            .map(([word, count]) => ({ word, count }));
-
-          setKeywords(sortedKeywords);
-        } else {
-          throw new Error("Sentiment data is unavailable or invalid.");
+        if (!response.ok) {
+          throw new Error("Failed to fetch comments.csv");
         }
-      } catch (err) {
-        console.error("Error fetching word cloud data:", err);
-        setError("데이터를 가져오는 중 오류가 발생했습니다.");
+
+        // CSV 데이터 읽기 및 파싱
+        const text = await response.text();
+        const rows = text
+          .trim()
+          .split("\n")
+          .slice(1) // 헤더 제외
+          .map((row) => row.split(","));
+
+        // 감정별 댓글 분류
+        const positiveComments = [];
+        const neutralComments = [];
+        const negativeComments = [];
+
+        rows.forEach((row) => {
+          const content = row[1]?.replace(/"/g, "").trim(); // 댓글 내용
+          const sentiment = row[3]?.trim(); // 감정 값 (0, 1, 2)
+
+          if (sentiment === "0") positiveComments.push(content);
+          else if (sentiment === "1") neutralComments.push(content);
+          else if (sentiment === "2") negativeComments.push(content);
+        });
+
+        // 감정에 따라 텍스트 설정
+        const data = {
+          긍정: positiveComments.join(" "),
+          중립: neutralComments.join(" "),
+          부정: negativeComments.join(" "),
+        };
+
+        const sentimentText = data[selectedSentiment] || "";
+        setWordCloudData(sentimentText);
+
+        // 키워드와 빈도 계산
+        const wordCounts = sentimentText.split(/\s+/).reduce((acc, word) => {
+          acc[word] = (acc[word] || 0) + 1;
+          return acc;
+        }, {});
+
+        // 상위 5개 키워드 추출
+        const sortedKeywords = Object.entries(wordCounts)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 5)
+          .map(([word, count]) => ({ word, count }));
+
+        setKeywords(sortedKeywords);
+      } catch (error) {
+        console.error("Error loading WordCloud data:", error);
         setWordCloudData("");
         setKeywords([]);
       }
@@ -82,7 +111,7 @@ const WordCloudRank = ({ hasData }) => {
         <WordCloud
           title={selectedSentiment}
           data={wordCloudData}
-          hasData={hasData && wordCloudData && wordCloudData.length > 0}
+          hasData={wordCloudData && wordCloudData.length > 0}
           size="large"
         />
       </div>

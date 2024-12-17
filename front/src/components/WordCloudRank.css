@@ -26,6 +26,9 @@
   font-weight: bold;
 }
 
+.rank-title {
+  margin-right: 160px;
+}
 .rank-content {
   flex: 1;
   display: flex;
@@ -49,7 +52,7 @@
 }
 
 input[type="radio"] {
-  display: none; /* 기본 라디오 버튼은 숨김 */
+  display: none;
 }
 
 label {
