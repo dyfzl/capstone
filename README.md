@@ -34,7 +34,9 @@ vscode 터미널 2개 생성
 > *터미널1*
 
 ```
-    cd Back
+    cd back
+
+    pip install 'git+https://github.com/SKTBrain/KoBERT.git#egg=kobert_tokenizer&subdirectory=kobert_hf'
    
     uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
@@ -45,8 +47,10 @@ vscode 터미널 2개 생성
 > *터미널2*
 
 ```
-    cd Back
-    
+    cd front
+
+    npm install
+
     npm run dev
     
 ```
