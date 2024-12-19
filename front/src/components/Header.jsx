@@ -53,7 +53,7 @@ const Header = ({ onSearchComplete }) => {
       console.log("Response from Backend:", data);
 
       alert(
-        `${data.total_comments_count}개의 댓글이 성공적으로 저장되었습니다.`
+        `댓글 분석이 완료되었습니다.`
       );
 
       // onSearchComplete 콜백 호출
