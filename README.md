@@ -40,6 +40,9 @@ vscode 터미널 2개 생성
    
     uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
+    #kobert
+    pip install 'git+https://github.com/SKTBrain/KoBERT.git#egg=kobert_tokenizer&subdirectory=kobert_hf'
+
 ```
 
 <br/>
